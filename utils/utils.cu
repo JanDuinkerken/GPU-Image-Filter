@@ -3,7 +3,7 @@
 
 #include "utils.h"
 
-spng_ctx *load_png(char *path)
+spng_ctx *load_png(char * path)
 {
     FILE *fp = fopen(path, "rb");
     if (!fp)
