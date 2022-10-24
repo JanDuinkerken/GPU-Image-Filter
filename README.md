@@ -6,7 +6,26 @@ The kernels receive the image as a linear buffer representing the pixels color i
 with the convolutional filter (e.g., the one reported below), apply the filter, and store the resulting image in disk
 
 ## Sharpen convolutional filter
-
+```
  0 -1  0
 -1  5 -1
  0 -1  0
+```
+
+## Usage
+
+To get all the dependencies you can run:
+```bash 
+    make setup
+```
+
+To compile just run:
+```bash
+    make
+```
+
+If there are any problems with the program try running:
+```bash
+    make clean
+```
+and then compile it again
