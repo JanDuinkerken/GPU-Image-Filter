@@ -35,52 +35,14 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 
 #include "../utils/utils.h"
 
-int encode_image(void *image, size_t length, uint32_t width, uint32_t height, enum spng_color_type color_type, int bit_depth)
-{
-    int format;
-    int ret = 0;
-    spng_ctx *ctx = NULL;
-    struct spng_ihdr ihdr = {0};
-
-    ctx = spng_ctx_new(SPNG_CTX_ENCODER);
-    spng_set_option(ctx, SPNG_ENCODE_TO_BUFFER, 1);
-
-    /* Alternatively we can set an output FILE* or stream with spng_set_png_file() or spng_set_png_stream() */
-
-    ihdr.width = width;
-    ihdr.height = height;
-    ihdr.color_type = color_type;
-    ihdr.bit_depth = bit_depth;
-
-    spng_set_ihdr(ctx, &ihdr);
-
-    format = SPNG_FMT_PNG;
-
-    /* SPNG_ENCODE_FINALIZE will finalize the PNG with the end-of-file marker */
-    ret = spng_encode_image(ctx, image, length, format, SPNG_ENCODE_FINALIZE);
-    if(ret)
-    {
-        printf("spng_encode_image() error: %s\n", spng_strerror(ret));
-        spng_ctx_free(ctx);
-        return ret;
-    }
-
-    size_t png_size;
-    void *png_buf = NULL;
-
-    png_buf = spng_get_png_buffer(ctx, &png_size, &ret);
-    if(png_buf == NULL)
-    {
-        printf("spng_get_png_buffer() error: %s\n", spng_strerror(ret));
-    }
-
-    free(png_buf);
-}
+// Input and output paths
+#define INPATH "../input/pngtest.png"
+#define OUTPATH "../output/sharpened_pngtest.png"
 
 int main()
 {
     // Loading png
-    spng_ctx *ctx = load_png("../images/pngtest.png");
+    spng_ctx *ctx = load_png(INPATH);
     if (ctx == NULL)
         return 1;
 
@@ -129,9 +91,11 @@ int main()
     // Sharpen convolutional filter
     int filter[3][3] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};
 
-    encode_image(image, image_size, ihdr.width, ihdr.height, ihdr.color_type, ihdr.bit_depth);
+    spng_color_type color_type = get_color_type(ihdr.color_type);
 
-    fwrite(image, image_size);
+    encode_png(image, image_size, ihdr.width, ihdr.height, color_type, ihdr.bit_depth);
+
+    write_png(OUTPATH, image_size, image);
 
     spng_ctx_free(ctx);
     free(image);
