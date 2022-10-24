@@ -50,14 +50,14 @@ int main()
     struct spng_ihdr ihdr;
     if (spng_get_ihdr(ctx, &ihdr))
     {
-        printf("failed to get information header\n");
+        printf("Failed to get information header\n");
         return 1;
     }
 
-    printf("width: %u\n"
-           "height: %u\n"
-           "bit depth: %u\n"
-           "color type: %u\n", //  "color type: %u - %s\n"
+    printf("Width: %u\n"
+           "Height: %u\n"
+           "Bit depth: %u\n"
+           "Color type: %u\n", //  "color type: %u - %s\n"
            ihdr.width, ihdr.height, ihdr.bit_depth, ihdr.color_type /*, color_name*/);
 
     size_t image_size, image_width;
@@ -67,7 +67,7 @@ int main()
 
     if (spng_decoded_image_size(ctx, format, &image_size))
     {
-        printf("decoding image size failed\n");
+        printf("Decoding image size failed\n");
         return 1;
     }
 
@@ -75,13 +75,13 @@ int main()
     unsigned char *image = (unsigned char *)malloc(image_size);
     if (image == NULL)
     {
-        printf("error allocating image memory\n");
+        printf("Error allocating image memory\n");
     }
 
     // Decoding the image to get the RBGA values
     if (spng_decode_image(ctx, image, image_size, SPNG_FMT_RGBA8, 0))
     {
-        printf("error decoding image\n");
+        printf("Error decoding image\n");
         return 1;
     }
 
@@ -93,9 +93,7 @@ int main()
 
     spng_color_type color_type = get_color_type(ihdr.color_type);
 
-    encode_png(image, image_size, ihdr.width, ihdr.height, color_type, ihdr.bit_depth);
-
-    write_png(OUTPATH, image_size, image);
+    encode_png(image, image_size, ihdr.width, ihdr.height, color_type, ihdr.bit_depth, OUTPATH);
 
     spng_ctx_free(ctx);
     free(image);

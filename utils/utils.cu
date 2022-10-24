@@ -48,8 +48,15 @@ spng_color_type get_color_type(uint8_t type)
     }
 }
 
-int encode_png(void *image, size_t length, uint32_t width, uint32_t height, enum spng_color_type color_type, int bit_depth)
+int encode_png(void *image, size_t length, uint32_t width, uint32_t height, enum spng_color_type color_type,
+               int bit_depth, char *path)
 {
+    FILE *outfp = fopen(path, "w");
+    if (!outfp)
+    {
+        printf("Error creating output file\n");
+        return 1;
+    }
     int format;
     int ret = 0;
     spng_ctx *ctx = NULL;
@@ -79,25 +86,24 @@ int encode_png(void *image, size_t length, uint32_t width, uint32_t height, enum
     }
 
     size_t png_size;
+
     void *png_buf = NULL;
 
     png_buf = spng_get_png_buffer(ctx, &png_size, &ret);
     if (png_buf == NULL)
     {
-        printf("Spng_get_png_buffer() error: %s\n", spng_strerror(ret));
+         printf("Spng_get_png_buffer() error: %s\n", spng_strerror(ret));
     }
+
+    ret = write_png(outfp, png_size, png_buf);
 
     free(png_buf);
+
+    return ret;
 }
 
-int write_png(char *path, size_t image_size, unsigned char *image)
+int write_png(FILE *outfp, size_t image_size, void *image)
 {
-    FILE *outfp = fopen(path, "w");
-    if (!outfp)
-    {
-        printf("Error creating output file\n");
-        return 1;
-    }
     uint64_t no_of_elements = image_size / sizeof(unsigned char); // considering img as byte array -> no. of bytes
     if (fwrite(image, sizeof(unsigned char), no_of_elements, outfp) != no_of_elements)
     {
@@ -105,4 +111,5 @@ int write_png(char *path, size_t image_size, unsigned char *image)
         return 1;
     }
     fclose(outfp);
+    return 0;
 }
