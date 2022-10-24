@@ -15,14 +15,14 @@ ODIR=build/obj
 BDIR=build
 
 # External libraries imported
-LIBS=-lpng
+LIBS=-lm -lz
 
 # Dependencies that where programmed by us
-_DEPS = utils.h
+_DEPS = utils.h spng/spng.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 # Object files needed for compiling the filter
-_OBJ = main.o utils.o
+_OBJ = main.o utils.o spng.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 #Rules for compiling the dependencies
@@ -31,6 +31,9 @@ $(ODIR)/%.o: $(SRCDIR)/%.cu $(DEPS)
 
 $(ODIR)/%.o: $(IDIR)/%.cu $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(ODIR)/%.o: $(IDIR)/spng/%.c $(DEPS)
+	gcc -c -o $@ $< $(CFLAGS) $(LIBS)
 
 # Rule for compiling the final filter
 filter: $(OBJ)

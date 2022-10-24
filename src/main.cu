@@ -30,10 +30,9 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 // TODO: Test it with the different grid sizes
 // TODO: Test the performance with the nvprof
 
-
-#include <png.h>
 #include <stdio.h>
 #include <stdint.h>
+#include "utils/spng/spng.h"
 
 #include "../utils/utils.h"
 
@@ -43,17 +42,6 @@ int main()
     FILE *fp = fopen("../images/pngtest.png", "rb");
     if (!fp)
         return 1;
-
-    png_structp png_ptr = NULL;
-    png_infop info_ptr = NULL, end_info = NULL;
-    png_bytepp rows = NULL;
-
-    if (initialize_png(png_ptr, info_ptr, end_info, fp) != 0) {
-        printf("Error initializing png!\n");
-        return 1;
-    }
-
-    process_png(png_ptr, info_ptr, rows);
 
     // Sharpen convolutional filter
     int filter[3][3] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};
