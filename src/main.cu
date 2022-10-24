@@ -32,16 +32,37 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 
 #include <stdio.h>
 #include <stdint.h>
-#include "utils/spng/spng.h"
+#include "../utils/spng/spng.h"
 
 #include "../utils/utils.h"
 
 int main()
 {
-    // Loading file and initializing png structs
     FILE *fp = fopen("../images/pngtest.png", "rb");
-    if (!fp)
+    if (!fp) {
+        printf("failed to open image file\n");
         return 1;
+    }
+
+    spng_ctx *ctx = spng_ctx_new(0);
+    if (!ctx) {
+        printf("failed to create spng context\n");
+        return 1;
+    }
+
+    spng_set_png_file(ctx, fp);
+
+    struct spng_ihdr ihdr;
+    if(spng_get_ihdr(ctx, &ihdr)) {
+        printf("failed to get information header\n");
+        return 1;
+    }
+
+    printf("width: %u\n"
+        "height: %u\n"
+        "bit depth: %u\n"
+        "color type: %u\n", //  "color type: %u - %s\n"
+        ihdr.width, ihdr.height, ihdr.bit_depth, ihdr.color_type/*, color_name*/);
 
     // Sharpen convolutional filter
     int filter[3][3] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};

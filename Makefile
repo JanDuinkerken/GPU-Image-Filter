@@ -48,3 +48,6 @@ clean:
 setup:
 	mkdir -p $(BDIR) 
 	mkdir -p $(ODIR)
+	mkdir -p $(IDIR)/spng/
+	wget -O $(IDIR)/spng/spng.c https://raw.githubusercontent.com/randy408/libspng/master/spng/spng.c 
+	wget -O $(IDIR)/spng/spng.h https://raw.githubusercontent.com/randy408/libspng/master/spng/spng.h
