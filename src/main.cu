@@ -23,7 +23,6 @@ Run some experiments by using three block sizes, namely 8x8, 8x16, 16x8, 16x16, 
 the executions into a table reporting the elapsed times and the bytes accessed L1, L2 and DRAM memory systems.
 */
 
-
 // TODO: Implement the algorithm from wikipedia
 // TODO: Adapt the algorithm for using it as a GPU kernel
 // TODO: Output the filtered image to a new file
@@ -38,31 +37,52 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 
 int main()
 {
-    FILE *fp = fopen("../images/pngtest.png", "rb");
-    if (!fp) {
-        printf("failed to open image file\n");
+    // Loading png
+    spng_ctx *ctx = load_png("../images/pngtest.png");
+    if (ctx == NULL)
         return 1;
-    }
 
-    spng_ctx *ctx = spng_ctx_new(0);
-    if (!ctx) {
-        printf("failed to create spng context\n");
-        return 1;
-    }
-
-    spng_set_png_file(ctx, fp);
-
+    // Getting png information
     struct spng_ihdr ihdr;
-    if(spng_get_ihdr(ctx, &ihdr)) {
+    if (spng_get_ihdr(ctx, &ihdr))
+    {
         printf("failed to get information header\n");
         return 1;
     }
 
     printf("width: %u\n"
-        "height: %u\n"
-        "bit depth: %u\n"
-        "color type: %u\n", //  "color type: %u - %s\n"
-        ihdr.width, ihdr.height, ihdr.bit_depth, ihdr.color_type/*, color_name*/);
+           "height: %u\n"
+           "bit depth: %u\n"
+           "color type: %u\n", //  "color type: %u - %s\n"
+           ihdr.width, ihdr.height, ihdr.bit_depth, ihdr.color_type /*, color_name*/);
+
+    size_t image_size, image_width;
+    int format = SPNG_FMT_PNG;
+    if (ihdr.color_type == SPNG_COLOR_TYPE_INDEXED)
+        format = SPNG_FMT_RGB8;
+
+    if (spng_decoded_image_size(ctx, format, &image_size))
+    {
+        printf("decoding image size failed\n");
+        return 1;
+    }
+
+    // Allocating memory for the image
+    unsigned char *image = (unsigned char *)malloc(image_size);
+    if (image == NULL)
+    {
+        printf("error allocating image memory\n");
+    }
+
+    // Decoding the image to get the RBGA values
+    if (spng_decode_image(ctx, image, image_size, SPNG_FMT_RGBA8, 0))
+    {
+        printf("error decoding image\n");
+        return 1;
+    }
+
+    // 4 values for each one of the pixels in the row (RGBA)
+    image_width = image_size / ihdr.height;
 
     // Sharpen convolutional filter
     int filter[3][3] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};
