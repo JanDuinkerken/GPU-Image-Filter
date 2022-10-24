@@ -41,3 +41,7 @@ filter: $(OBJ)
 
 clean: 
 	rm -f $(ODIR)/*.o *- core $(IDIR)/*-
+
+setup:
+	mkdir -p $(BDIR) 
+	mkdir -p $(ODIR)

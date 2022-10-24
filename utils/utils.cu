@@ -5,7 +5,7 @@
 
 int initialize_png(png_structp png_ptr, png_infop info_ptr, png_infop end_info, FILE *fp)
 {
-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);  // equivalent for writing: ng_create_write_struct() && png_destroy_write_struct()
     if (!png_ptr)
         return (1);
 
