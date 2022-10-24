@@ -16,13 +16,13 @@ int initialize_png(png_structp png_ptr, png_infop info_ptr, png_infop end_info, 
                                 (png_infopp)NULL, (png_infopp)NULL);
         return (1);
     }
-    end_info = png_create_info_struct(png_ptr);
-    if (!end_info)
-    {
-        png_destroy_read_struct(&png_ptr, &info_ptr,
-                                (png_infopp)NULL);
-        return (1);
-    }
+    // end_info = png_create_info_struct(png_ptr);
+    // if (!end_info)
+    // {
+    //     png_destroy_read_struct(&png_ptr, &info_ptr,
+    //                             (png_infopp)NULL);
+    //     return (1);
+    // }
 
     png_init_io(png_ptr, fp);
 
