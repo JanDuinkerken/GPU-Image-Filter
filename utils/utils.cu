@@ -3,7 +3,7 @@
 
 #include "utils.h"
 
-spng_ctx *load_png(char *path)
+spng_ctx *load_png(const char *path)
 {
     FILE *fp = fopen(path, "rb");
     if (!fp)
@@ -48,8 +48,67 @@ spng_color_type get_color_type(uint8_t type)
     }
 }
 
-int encode_png(void *image, size_t length, uint32_t width, uint32_t height, enum spng_color_type color_type,
-               int bit_depth, char *path)
+int decode_png( const char *path, spng_ctx *ctx, struct spng_ihdr *ihdr, unsigned char **image, size_t *image_size,
+               size_t *image_width, spng_color_type *color_type)
+{
+    ctx = load_png(path);
+    if (ctx == NULL)
+        return 1;
+
+    // Getting png information
+    if (spng_get_ihdr(ctx, ihdr))
+    {
+        printf("Failed to get information header\n");
+        return 1;
+    }
+
+    int format = SPNG_FMT_PNG;
+    if ((*ihdr).color_type == SPNG_COLOR_TYPE_INDEXED)
+        format = SPNG_FMT_RGB8;
+
+    if (spng_decoded_image_size(ctx, format, image_size))
+    {
+        printf("Decoding image size failed\n");
+        return 1;
+    }
+
+    // Allocating memory for the image
+    *image = (unsigned char *)malloc(*image_size);
+    if (*image == NULL)
+    {
+        printf("Error allocating image memory\n");
+        return 1;
+    }
+
+    // Decoding the image to get the RBGA values
+    if (spng_decode_image(ctx, *image, *image_size, SPNG_FMT_RGBA8, 0))
+    {
+        printf("Error decoding image\n");
+        return 1;
+    }
+
+    // 4 values for each one of the pixels in the row (RGBA)
+    *image_width = *image_size / (*ihdr).height;
+
+    *color_type = get_color_type((*ihdr).color_type);
+    
+    return 0;
+}
+
+int write_png(FILE *outfp, size_t image_size, void *image)
+{
+    uint64_t no_of_elements = image_size / sizeof(unsigned char); // considering img as byte array -> no. of bytes
+    if (fwrite(image, sizeof(unsigned char), no_of_elements, outfp) != no_of_elements)
+    {
+        printf("Error writing contents of output file\n");
+        return 1;
+    }
+    fclose(outfp);
+    return 0;
+}
+
+int encode_png(unsigned char *image, size_t length, uint32_t width, uint32_t height, enum spng_color_type color_type,
+               int bit_depth, const char *path)
 {
     FILE *outfp = fopen(path, "w");
     if (!outfp)
@@ -92,7 +151,7 @@ int encode_png(void *image, size_t length, uint32_t width, uint32_t height, enum
     png_buf = spng_get_png_buffer(ctx, &png_size, &ret);
     if (png_buf == NULL)
     {
-         printf("Spng_get_png_buffer() error: %s\n", spng_strerror(ret));
+        printf("Spng_get_png_buffer() error: %s\n", spng_strerror(ret));
     }
 
     ret = write_png(outfp, png_size, png_buf);
@@ -100,16 +159,4 @@ int encode_png(void *image, size_t length, uint32_t width, uint32_t height, enum
     free(png_buf);
 
     return ret;
-}
-
-int write_png(FILE *outfp, size_t image_size, void *image)
-{
-    uint64_t no_of_elements = image_size / sizeof(unsigned char); // considering img as byte array -> no. of bytes
-    if (fwrite(image, sizeof(unsigned char), no_of_elements, outfp) != no_of_elements)
-    {
-        printf("Error writing contents of output file\n");
-        return 1;
-    }
-    fclose(outfp);
-    return 0;
 }

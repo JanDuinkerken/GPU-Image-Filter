@@ -42,56 +42,24 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 int main()
 {
     // Loading png
-    spng_ctx *ctx = load_png(INPATH);
-    if (ctx == NULL)
-        return 1;
-
-    // Getting png information
+    spng_ctx *ctx = NULL;
     struct spng_ihdr ihdr;
-    if (spng_get_ihdr(ctx, &ihdr))
-    {
-        printf("Failed to get information header\n");
-        return 1;
-    }
-
-    printf("Width: %u\n"
-           "Height: %u\n"
-           "Bit depth: %u\n"
-           "Color type: %u\n", //  "color type: %u - %s\n"
-           ihdr.width, ihdr.height, ihdr.bit_depth, ihdr.color_type /*, color_name*/);
-
+    spng_color_type color_type;
     size_t image_size, image_width;
-    int format = SPNG_FMT_PNG;
-    if (ihdr.color_type == SPNG_COLOR_TYPE_INDEXED)
-        format = SPNG_FMT_RGB8;
+    unsigned char *image = NULL;
 
-    if (spng_decoded_image_size(ctx, format, &image_size))
-    {
-        printf("Decoding image size failed\n");
-        return 1;
-    }
-
-    // Allocating memory for the image
-    unsigned char *image = (unsigned char *)malloc(image_size);
-    if (image == NULL)
-    {
-        printf("Error allocating image memory\n");
-    }
-
-    // Decoding the image to get the RBGA values
-    if (spng_decode_image(ctx, image, image_size, SPNG_FMT_RGBA8, 0))
-    {
-        printf("Error decoding image\n");
-        return 1;
-    }
-
-    // 4 values for each one of the pixels in the row (RGBA)
-    image_width = image_size / ihdr.height;
+    if (decode_png(INPATH, ctx, &ihdr, &image, &image_size, &image_width, &color_type)) return 1;
 
     // Sharpen convolutional filter
-    int filter[3][3] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};
+    // int filter[3][3] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};
 
-    spng_color_type color_type = get_color_type(ihdr.color_type);
+    printf("Image size: %d\n"
+            "Width: %d\n"
+            "Height: %d\n"
+            "Color type: %d\n"
+            "Bit depth: %d\n"
+            "Image pointer: %p\n"
+            , image_size, ihdr.width, ihdr.height, color_type, ihdr.bit_depth, image);
 
     encode_png(image, image_size, ihdr.width, ihdr.height, color_type, ihdr.bit_depth, OUTPATH);
 
