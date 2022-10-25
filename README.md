@@ -1,5 +1,4 @@
 # Sharpenning image filter CUDA
-
 This CUDA program loads an image into memory and the applies a convolutional sharpenning filter on GPU in parallel.
 
 The kernels receive the image as a linear buffer representing the pixels color in the RBG or RGBA format, together
