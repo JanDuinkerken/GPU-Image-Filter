@@ -116,7 +116,7 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
          {-1,  5, -1},
          { 0, -1,  0}};
     int d_filter[F_EXPANSION][F_EXPANSION];
-    error = cudaMemcpy2D(d_filter, F_PITCH, filter, F_PITCH, F_EXPANSION * sizeof(int), F_EXPANSION * sizeof(int), cudaMemcpyHostToDevice);
+    error = cudaMemcpy2D(d_filter, F_PITCH, filter, F_PITCH, F_EXPANSION * sizeof(int), F_EXPANSION, cudaMemcpyHostToDevice);
     checkReturnedError(error, __LINE__);
 
     int *width;
