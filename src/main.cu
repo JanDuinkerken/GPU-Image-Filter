@@ -36,10 +36,11 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 #define INPATH "../input/pngtest.png"
 #define OUTPATH "../output/sharpened_pngtest.png"
 
-#define SHARPEN_SIZE 1
+#define SHARPEN_SIZE (1)
+// assume a quadratic filter
 #define F_EXPANSION (SHARPEN_SIZE * 2 + 1)
-#define F_PITCH 3
-#define COLOR_VALUES 4
+#define F_PITCH (3)
+#define COLOR_VALUES (4)
 
 __global__ void sharpenFilterKernel(unsigned char *d_image, unsigned char *d_mod_image,
                                     int filter[F_EXPANSION][F_EXPANSION], int width, int height)
