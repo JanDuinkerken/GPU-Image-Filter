@@ -23,9 +23,6 @@ Run some experiments by using three block sizes, namely 8x8, 8x16, 16x8, 16x16, 
 the executions into a table reporting the elapsed times and the bytes accessed L1, L2 and DRAM memory systems.
 */
 
-// TODO: Test it with the different grid sizes (args)
-// TODO: Test the performance with the nvprof
-
 #include <stdio.h>
 #include <stdint.h>
 #include "../utils/spng/spng.h"
@@ -116,8 +113,11 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
         {{ 0, -1,  0},
          {-1,  5, -1},
          { 0, -1,  0}};
-    int d_filter[F_EXPANSION][F_EXPANSION];
-    error = cudaMemcpy2D(d_filter, F_PITCH * sizeof(int), filter, F_PITCH * sizeof(int), F_EXPANSION * sizeof(int), F_EXPANSION, cudaMemcpyHostToDevice);
+    int *d_filter;
+    size_t pitch;
+    error = cudaMallocPitch(&d_filter, &pitch, F_EXPANSION * sizeof(int), F_EXPANSION);  // see: https://stackoverflow.com/questions/35771430/cudamallocpitch-and-cudamemcpy2d
+    checkReturnedError(error, __LINE__);
+    error = cudaMemcpy2D(d_filter, pitch * sizeof(int), filter, pitch * sizeof(int), F_EXPANSION * sizeof(int), F_EXPANSION, cudaMemcpyHostToDevice);
     checkReturnedError(error, __LINE__);
 
     int *width;
@@ -135,7 +135,7 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     error = cudaMemcpy(mod_image, d_mod_image, image_size, cudaMemcpyDeviceToHost);
     checkReturnedError(error, __LINE__);
 
-    cudaFree(d_mod_image); cudaFree(d_image);
+    cudaFree(d_mod_image); cudaFree(d_image); cudaFree(d_filter);
     cudaFree(width); cudaFree(height);
 }
 
