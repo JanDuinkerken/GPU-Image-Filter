@@ -23,10 +23,7 @@ Run some experiments by using three block sizes, namely 8x8, 8x16, 16x8, 16x16, 
 the executions into a table reporting the elapsed times and the bytes accessed L1, L2 and DRAM memory systems.
 */
 
-// TODO: Implement the algorithm from wikipedia
-// TODO: Adapt the algorithm for using it as a GPU kernel
-// TODO: Output the filtered image to a new file
-// TODO: Test it with the different grid sizes
+// TODO: Test it with the different grid sizes (args)
 // TODO: Test the performance with the nvprof
 
 #include <stdio.h>
@@ -39,43 +36,42 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 #define INPATH "../input/pngtest.png"
 #define OUTPATH "../output/sharpened_pngtest.png"
 
-#define F_HEIGHT 3
-#define F_WIDTH 3
-#define F_PITCH 3
-
 #define SHARPEN_SIZE 1
+#define F_EXPANSION (SHARPEN_SIZE * 2 + 1)
+#define F_PITCH 3
+#define COLOR_VALUES 4
 
 __global__ void sharpenFilterKernel(unsigned char *d_image, unsigned char *d_mod_image, int offset,
-                                    int filter[F_HEIGHT][F_WIDTH], int width, int height)
+                                    int filter[F_EXPANSION][F_EXPANSION], int width, int height)
 {
-    int Col = blockIdx.x * blockDim.x + threadIdx.x;
-    int Row = blockIdx.y * blockDim.y + threadIdx.y;
-    if (Col < width && Row < height)
+    int column = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    if (column < width && row < height)
     {
-        int pixR = 0;
-        int pixG = 0;
-        int pixB = 0;
-        int pixA = 0;
-
-        int temp[36];  // 3x3 pixels with 4 color values each, 3x3x4 = 36
-
         for (int sharpenRow = -SHARPEN_SIZE; sharpenRow < SHARPEN_SIZE + 1; sharpenRow++)
             for (int sharpenCol = -SHARPEN_SIZE; sharpenCol < SHARPEN_SIZE + 1; sharpenCol++)
             {
-                int curRow = Row + sharpenRow;
-                int curCol = Col + sharpenCol;
-                if (curRow > -1 && curRow < height && curCol > -1 && curCol < width)
+                int currentRow = row + sharpenRow;
+                int currentColumn = column + sharpenCol;
+                if (currentRow > -1 && currentRow < height && currentColumn > -1 && currentColumn < width)
                 {
-                    temp[3 * (curRow * width + curCol) + 1] = d_image[3 * (curRow * width + curCol)];
-                    temp[3 * (curRow * width + curCol) + 1] = d_image[3 * (curRow * width + curCol) + 1];
-                    temp[3 * (curRow * width + curCol) + 2] = d_image[3 * (curRow * width + curCol) + 2];
-                    temp[3 * (curRow * width + curCol) + 3] = d_image[3 * (curRow * width + curCol) + 3];
+                    d_mod_image[COLOR_VALUES * (row * width + column)    ]
+                        += d_image[COLOR_VALUES * (currentRow * width + currentColumn)    ]
+                            * filter[sharpenRow][sharpenCol];  // R
+
+                    d_mod_image[COLOR_VALUES * (row * width + column) + 1]
+                        += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 1]
+                            * filter[sharpenRow][sharpenCol];  // G
+
+                    d_mod_image[COLOR_VALUES * (row * width + column) + 2]
+                        += d_image[COLOR_VALUES * (currentRow * width + cucurrentColumnrCol) + 2]
+                            * filter[sharpenRow][sharpenCol];  // B
+
+                    d_mod_image[COLOR_VALUES * (row * width + column) + 3]
+                        += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 3]
+                            * filter[sharpenRow][sharpenCol];  // A
                 }
             }
-        // d_mod_image[3 * (Row * width + Col)] = (unsigned char)(pixR / pixels);
-        // d_mod_image[3 * (Row * width + Col) + 1] = (unsigned char)(pixG / pixels);
-        // d_mod_image[3 * (Row * width + Col) + 2] = (unsigned char)(pixB / pixels);
-        // d_mod_image[3 * (Row * width + Col) + 3] = (unsigned char)(pixA / pixels);
     }
 }
 
@@ -102,14 +98,16 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     checkReturnedError(error, __LINE__);
     error = cudaMalloc(&d_mod_image, image_size);
     checkReturnedError(error, __LINE__);
+    error = cudaMemset(&d_mod_image, 0, image_size);
+    checkReturnedError(error, __LINE__);
 
     error = cudaMemcpy(d_image, image, image_size, cudaMemcpyHostToDevice);
     checkReturnedError(error, __LINE__);
 
     // Sharpen convolutional filter
-    int filter[F_HEIGHT][F_WIDTH] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};
-    int d_filter[F_HEIGHT][F_WIDTH];
-    cudaMemcpy2D(d_filter, F_PITCH, filter, F_PITCH, F_WIDTH * sizeof(int), F_HEIGHT * sizeof(int), cudaMemcpyHostToDevice);
+    int filter[F_EXPANSION][F_EXPANSION] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};
+    int d_filter[F_EXPANSION][F_EXPANSION];
+    cudaMemcpy2D(d_filter, F_PITCH, filter, F_PITCH, F_EXPANSION * sizeof(int), F_EXPANSION * sizeof(int), cudaMemcpyHostToDevice);
 
     int *width;
     int *height;
@@ -120,7 +118,6 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     *width = h_width;
     *height = h_height;
 
-    // block sizes to test: 8x8, 8x16, 16x8, 16x16, 16x32, 32x16 and 32x32
     for (int i = 0; i < 4; i++)
         sharpenFilterKernel<<<grid_size, block_size>>>(d_image, d_mod_image, i, d_filter, *width, *height);
 
