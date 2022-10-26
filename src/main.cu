@@ -86,6 +86,12 @@ void checkReturnedError(cudaError_t error, int line)
     }
 }
 
+// for error-handling on operations that do not return any error
+void checkError(int line) {
+    cudaError_t error = cudaGetLastError();
+    checkReturnedError(error, line);
+}
+
 void process_image(size_t image_size, unsigned char *image, unsigned char *mod_image,
                    int block_size_x, int block_size_y, int h_height, int h_width)
 {
@@ -98,7 +104,7 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     checkReturnedError(error, __LINE__);
     error = cudaMalloc(&d_mod_image, image_size);
     checkReturnedError(error, __LINE__);
-    error = cudaMemset(&d_mod_image, 0, image_size);
+    error = cudaMemset(d_mod_image, 0, image_size);
     checkReturnedError(error, __LINE__);
 
     error = cudaMemcpy(d_image, image, image_size, cudaMemcpyHostToDevice);
@@ -114,20 +120,19 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
 
     int *width;
     int *height;
-
     cudaMallocManaged(&width, sizeof(int));
     cudaMallocManaged(&height, sizeof(int));
-
     *width = h_width;
     *height = h_height;
 
     sharpenFilterKernel<<<grid_size, block_size>>>(d_image, d_mod_image, d_filter, *width, *height);
+    checkError(__LINE__);
 
     error = cudaMemcpy(mod_image, d_mod_image, image_size, cudaMemcpyDeviceToHost);
     checkReturnedError(error, __LINE__);
 
-    cudaFree(d_mod_image);
-    cudaFree(d_image);
+    cudaFree(d_mod_image); cudaFree(d_image);
+    cudaFree(width); cudaFree(height);
 }
 
 int main(int argc, char **argv)
