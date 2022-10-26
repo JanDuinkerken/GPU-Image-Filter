@@ -116,12 +116,15 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
          {-1,  5, -1},
          { 0, -1,  0}};
     int d_filter[F_EXPANSION][F_EXPANSION];
-    cudaMemcpy2D(d_filter, F_PITCH, filter, F_PITCH, F_EXPANSION * sizeof(int), F_EXPANSION * sizeof(int), cudaMemcpyHostToDevice);
+    error = cudaMemcpy2D(d_filter, F_PITCH, filter, F_PITCH, F_EXPANSION * sizeof(int), F_EXPANSION * sizeof(int), cudaMemcpyHostToDevice);
+    checkReturnedError(error, __LINE__);
 
     int *width;
     int *height;
     cudaMallocManaged(&width, sizeof(int));
+    checkReturnedError(error, __LINE__);
     cudaMallocManaged(&height, sizeof(int));
+    checkReturnedError(error, __LINE__);
     *width = h_width;
     *height = h_height;
 
