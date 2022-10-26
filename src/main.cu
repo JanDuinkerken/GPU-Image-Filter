@@ -109,7 +109,7 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     checkReturnedError(error, __LINE__);
 
     // Sharpen convolutional filter
-    int[] filter = {0, -1, 0, -1, 5, -1, 0, -1, 0};
+    int filter[F_EXPANSION * F_EXPANSION] = {0, -1, 0, -1, 5, -1, 0, -1, 0};
     int *d_filter;
     error = cudaMalloc(&d_filter, F_EXPANSION * F_EXPANSION * sizeof(int));
     checkReturnedError(error, __LINE__);
