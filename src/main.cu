@@ -41,7 +41,7 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 #define F_PITCH 3
 #define COLOR_VALUES 4
 
-__global__ void sharpenFilterKernel(unsigned char *d_image, unsigned char *d_mod_image, int offset,
+__global__ void sharpenFilterKernel(unsigned char *d_image, unsigned char *d_mod_image,
                                     int filter[F_EXPANSION][F_EXPANSION], int width, int height)
 {
     int column = blockIdx.x * blockDim.x + threadIdx.x;
@@ -55,21 +55,21 @@ __global__ void sharpenFilterKernel(unsigned char *d_image, unsigned char *d_mod
                 int currentColumn = column + sharpenCol;
                 if (currentRow > -1 && currentRow < height && currentColumn > -1 && currentColumn < width)
                 {
-                    d_mod_image[COLOR_VALUES * (row * width + column)    ]
+                    d_mod_image[COLOR_VALUES * (row * width + column)    ]  // R
                         += d_image[COLOR_VALUES * (currentRow * width + currentColumn)    ]
-                            * filter[sharpenRow][sharpenCol];  // R
+                            * filter[sharpenRow][sharpenCol];
 
-                    d_mod_image[COLOR_VALUES * (row * width + column) + 1]
+                    d_mod_image[COLOR_VALUES * (row * width + column) + 1]  // G
                         += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 1]
-                            * filter[sharpenRow][sharpenCol];  // G
+                            * filter[sharpenRow][sharpenCol];
 
-                    d_mod_image[COLOR_VALUES * (row * width + column) + 2]
-                        += d_image[COLOR_VALUES * (currentRow * width + cucurrentColumnrCol) + 2]
-                            * filter[sharpenRow][sharpenCol];  // B
+                    d_mod_image[COLOR_VALUES * (row * width + column) + 2]  // B
+                        += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 2]
+                            * filter[sharpenRow][sharpenCol];
 
-                    d_mod_image[COLOR_VALUES * (row * width + column) + 3]
+                    d_mod_image[COLOR_VALUES * (row * width + column) + 3]  // A
                         += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 3]
-                            * filter[sharpenRow][sharpenCol];  // A
+                            * filter[sharpenRow][sharpenCol];
                 }
             }
     }
@@ -87,12 +87,12 @@ void checkReturnedError(cudaError_t error, int line)
 }
 
 void process_image(size_t image_size, unsigned char *image, unsigned char *mod_image,
-                   int block_size_x, int block_size_y, int n, int h_height, int h_width)
+                   int block_size_x, int block_size_y, int h_height, int h_width)
 {
     unsigned char *d_mod_image;
     unsigned char *d_image;
     dim3 block_size(block_size_x, block_size_y, 1);
-    dim3 grid_size((int)ceil((float)n / block_size_x), (int)ceil((float)n / block_size_y), 1);
+    dim3 grid_size((int)ceil((float)h_width / block_size_x), (int)ceil((float)h_height / block_size_y), 1);
 
     cudaError_t error = cudaMalloc(&d_image, image_size);
     checkReturnedError(error, __LINE__);
@@ -105,7 +105,10 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     checkReturnedError(error, __LINE__);
 
     // Sharpen convolutional filter
-    int filter[F_EXPANSION][F_EXPANSION] = {{0, -1, 0}, {-1, 5, -1}, {0, -1, 0}};
+    int filter[F_EXPANSION][F_EXPANSION] =
+        {{ 0, -1,  0},
+         {-1,  5, -1},
+         { 0, -1,  0}};
     int d_filter[F_EXPANSION][F_EXPANSION];
     cudaMemcpy2D(d_filter, F_PITCH, filter, F_PITCH, F_EXPANSION * sizeof(int), F_EXPANSION * sizeof(int), cudaMemcpyHostToDevice);
 
@@ -118,8 +121,7 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     *width = h_width;
     *height = h_height;
 
-    for (int i = 0; i < 4; i++)
-        sharpenFilterKernel<<<grid_size, block_size>>>(d_image, d_mod_image, i, d_filter, *width, *height);
+    sharpenFilterKernel<<<grid_size, block_size>>>(d_image, d_mod_image, d_filter, *width, *height);
 
     error = cudaMemcpy(mod_image, d_mod_image, image_size, cudaMemcpyDeviceToHost);
     checkReturnedError(error, __LINE__);
@@ -136,10 +138,9 @@ int main(int argc, char **argv)
     size_t image_size, image_width;
     unsigned char *image = NULL;
     unsigned char *mod_image = NULL;
-    int block_size_x, block_size_y, n;
+    int block_size_x, block_size_y;
     block_size_x = atoi(argv[1]);
     block_size_y = atoi(argv[2]);
-    n = atoi(argv[3]);
 
     if (decode_png(INPATH, ctx, &ihdr, &image, &image_size, &image_width, &color_type))
         return 1;
@@ -150,7 +151,7 @@ int main(int argc, char **argv)
         printf("Error allocating the necessary memory to store the modified image");
         return 1;
     }
-    process_image(image_size, image, mod_image, block_size_x, block_size_y, n, ihdr.height, image_width);
+    process_image(image_size, image, mod_image, block_size_x, block_size_y, ihdr.height, image_width);
 
     encode_png(mod_image, image_size, ihdr.width, ihdr.height, color_type, ihdr.bit_depth, OUTPATH);
 
