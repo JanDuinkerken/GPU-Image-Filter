@@ -40,7 +40,7 @@ the executions into a table reporting the elapsed times and the bytes accessed L
 #define COLOR_VALUES (4)
 
 __global__ void sharpenFilterKernel(unsigned char *d_image, unsigned char *d_mod_image,
-                                    int filter[F_EXPANSION][F_EXPANSION], int width, int height)
+                                    int *filter, int width, int height)
 {
     int column = blockIdx.x * blockDim.x + threadIdx.x;
     int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -55,19 +55,19 @@ __global__ void sharpenFilterKernel(unsigned char *d_image, unsigned char *d_mod
                 {
                     d_mod_image[COLOR_VALUES * (row * width + column)    ]  // R
                         += d_image[COLOR_VALUES * (currentRow * width + currentColumn)    ]
-                            * filter[sharpenRow][sharpenCol];
+                            * filter[sharpenRow * width + sharpenCol];
 
                     d_mod_image[COLOR_VALUES * (row * width + column) + 1]  // G
                         += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 1]
-                            * filter[sharpenRow][sharpenCol];
+                            * filter[sharpenRow * width + sharpenCol];
 
                     d_mod_image[COLOR_VALUES * (row * width + column) + 2]  // B
                         += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 2]
-                            * filter[sharpenRow][sharpenCol];
+                            * filter[sharpenRow * width + sharpenCol];
 
                     d_mod_image[COLOR_VALUES * (row * width + column) + 3]  // A
                         += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 3]
-                            * filter[sharpenRow][sharpenCol];
+                            * filter[sharpenRow * width + sharpenCol];
                 }
             }
     }
@@ -109,22 +109,16 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     checkReturnedError(error, __LINE__);
 
     // Sharpen convolutional filter
-    int filter[F_EXPANSION][F_EXPANSION] =
-        {{ 0, -1,  0},
-         {-1,  5, -1},
-         { 0, -1,  0}};
+    int[] filter = {0, -1, 0, -1, 5, -1, 0, -1, 0};
     int *d_filter;
-    size_t pitch;
-    error = cudaMallocPitch(&d_filter, &pitch, F_EXPANSION * sizeof(int), F_EXPANSION);  // see: https://stackoverflow.com/questions/35771430/cudamallocpitch-and-cudamemcpy2d
-    checkReturnedError(error, __LINE__);
-    error = cudaMemcpy2D(d_filter, pitch * sizeof(int), filter, pitch * sizeof(int), F_EXPANSION * sizeof(int), F_EXPANSION, cudaMemcpyHostToDevice);
+    error = cudaMalloc(&d_filter, F_EXPANSION * F_EXPANSION * sizeof(int));
     checkReturnedError(error, __LINE__);
 
     int *width;
     int *height;
-    cudaMallocManaged(&width, sizeof(int));
+    error = cudaMallocManaged(&width, sizeof(int));
     checkReturnedError(error, __LINE__);
-    cudaMallocManaged(&height, sizeof(int));
+    error = cudaMallocManaged(&height, sizeof(int));
     checkReturnedError(error, __LINE__);
     *width = h_width;
     *height = h_height;
