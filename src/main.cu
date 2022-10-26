@@ -113,6 +113,8 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     int *d_filter;
     error = cudaMalloc(&d_filter, F_EXPANSION * F_EXPANSION * sizeof(int));
     checkReturnedError(error, __LINE__);
+    error = cudaMemcpy(d_filter, filter, F_EXPANSION * F_EXPANSION * sizeof(int), cudaMemcpyHostToDevice);
+    checkReturnedError(error, __LINE__);
 
     int *width;
     int *height;
