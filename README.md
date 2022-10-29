@@ -26,5 +26,6 @@ make
 If there are any problems with the program try running:
 ```bash
 make clean
+make setup
 ```
 and then compile it again.
