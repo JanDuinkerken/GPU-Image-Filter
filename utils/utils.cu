@@ -30,19 +30,14 @@ spng_color_type get_color_type(uint8_t type)
     {
     case 0:
         return SPNG_COLOR_TYPE_GRAYSCALE;
-        break;
     case 2:
         return SPNG_COLOR_TYPE_TRUECOLOR;
-        break;
     case 3:
         return SPNG_COLOR_TYPE_INDEXED;
-        break;
     case 4:
         return SPNG_COLOR_TYPE_GRAYSCALE_ALPHA;
-        break;
     case 6:
         return SPNG_COLOR_TYPE_TRUECOLOR_ALPHA;
-        break;
     default:
         return SPNG_COLOR_TYPE_TRUECOLOR;
     }

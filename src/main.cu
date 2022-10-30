@@ -65,9 +65,8 @@ __global__ void sharpenFilterKernel(unsigned char *d_image, unsigned char *d_mod
                         += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 2]
                             * filter[sharpenRow * width + sharpenCol];
 
-                    d_mod_image[COLOR_VALUES * (row * width + column) + 3]  // A
-                        += d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 3]
-                            * filter[sharpenRow * width + sharpenCol];
+                    d_mod_image[COLOR_VALUES * (row * width + column) + 3]  // A --> We do not apply the filter here
+                        = d_image[COLOR_VALUES * (currentRow * width + currentColumn) + 3];
                 }
             }
     }
@@ -128,6 +127,7 @@ void process_image(size_t image_size, unsigned char *image, unsigned char *mod_i
     sharpenFilterKernel<<<grid_size, block_size>>>(d_image, d_mod_image, d_filter, *width, *height);
     checkError(__LINE__);
 
+    // Illegal memory access when using pngtest_2.png
     error = cudaMemcpy(mod_image, d_mod_image, image_size, cudaMemcpyDeviceToHost);
     checkReturnedError(error, __LINE__);
 
