@@ -159,6 +159,7 @@ int main(int argc, char **argv) {
   int block_size_x, block_size_y;
   block_size_x = atoi(argv[1]);
   block_size_y = atoi(argv[2]);
+  unsigned char *expanded_image = NULL;
 
   if (decode_png(INPATH, ctx, &ihdr, &image, &image_size, &image_width,
                  &color_type))
@@ -169,6 +170,9 @@ int main(int argc, char **argv) {
     printf("Error allocating the necessary memory to store the modified image");
     return 1;
   }
+
+  expanded_image = expand_image(image, image_size, image_width, ihdr.height);
+
   process_image(image_size, image, mod_image, block_size_x, block_size_y,
                 ihdr.height, image_width);
 
