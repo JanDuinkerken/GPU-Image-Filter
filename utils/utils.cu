@@ -95,15 +95,9 @@ int write_png(FILE *outfp, size_t image_size, void *image) {
   return 0;
 }
 
-unsigned char *expand_image(unsigned char *image, size_t image_size,
-                            size_t image_width, size_t height) {
-  unsigned char *expanded_image;
-  size_t expanded_size =
-      image_size + sizeof(unsigned char) * (2 * (image_width + 8) + height * 8);
-  expanded_image = (unsigned char *)malloc(expanded_size);
+void expand_image(unsigned char *expanded_image, unsigned char *image,
+                  size_t image_size, size_t image_width, size_t height) {
   int row = 1;
-  // Populate expanded_image, first and second rows are equal and the last one
-  // and the one before that are also equal
   for (int i = 0; i < height + 2; i++) {
     row = i + 1;
     for (int j = 0; j < image_width + 8; j++) {
@@ -131,10 +125,7 @@ unsigned char *expand_image(unsigned char *image, size_t image_size,
       }
     }
   }
-
   // printf("image: %s\n expanded image: %s\n", image, expanded_image);
-
-  return expanded_image;
 }
 
 int encode_png(unsigned char *image, size_t length, uint32_t width,
