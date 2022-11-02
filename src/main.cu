@@ -160,10 +160,6 @@ int main(int argc, char **argv) {
   block_size_x = atoi(argv[1]);
   block_size_y = atoi(argv[2]);
   unsigned char *expanded_image = NULL;
-  size_t expanded_size =
-      image_size +
-      sizeof(unsigned char) * (2 * (image_width + 8) + ihdr.height * 8);
-  expanded_image = (unsigned char *)malloc(expanded_size);
 
   if (decode_png(INPATH, ctx, &ihdr, &image, &image_size, &image_width,
                  &color_type))
@@ -175,6 +171,10 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  size_t expanded_size =
+      image_size +
+      sizeof(unsigned char) * (2 * (image_width + 8) + ihdr.height * 8);
+  expanded_image = (unsigned char *)malloc(expanded_size);
   expand_image(expanded_image, image, image_size, image_width, ihdr.height);
 
   process_image(image_size, image, mod_image, block_size_x, block_size_y,
